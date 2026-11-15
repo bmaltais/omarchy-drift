@@ -176,7 +176,6 @@ PanelWindow {
         id: motionCol
         width: parent.width
         SliderRow { label: "Speed"; from: 0.05; to: 3; value: win.drift.speed; onMoved: function(v) { win.drift.speed = v } }
-        SliderRow { label: "Interaction"; from: 0; to: 1; value: win.drift.interaction; onMoved: function(v) { win.drift.interaction = v } }
       }
     }
 

@@ -7,8 +7,7 @@ on the background layer of every screen.
 - **Atmospheres**: Ember, Iris, Lagoon, Dusk, Aurora, Sage, Mono, and Weather (colours chosen by the sky). Or wander through them all.
 - **Follow the day**: brightness and warmth from the local hour; warm at dawn and dusk, dark and cool at night.
 - **Follow the weather**: Open-Meteo for the location of Omarchy's weather panel (`omarchy-weather-location`, else its IP lookup at geo.omarchy.org). Cloud greys the colours, rain beads on the glass, snow falls, a storm darkens.
-- **Interaction**: blobs move away from the pointer. A wallpaper gets no pointer events under windows, so the plugin polls `hyprctl cursorpos` at 25 Hz while interaction is above 0.
-- **Speed, grain, blob count** sliders.
+- **Speed, grain, blob count** sliders. (Pointer interaction is left out for now; the shader still has the input.)
 
 ## Install
 

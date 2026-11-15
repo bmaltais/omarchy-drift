@@ -1,5 +1,6 @@
 // Drift: an animated gradient wallpaper. State lives here; DriftLayer draws it, SettingsCard edits it.
 // `omarchy-shell io.github.bmaltais.drift toggle | on | off | open | close | status | set <key> <value>`
+pragma ComponentBehavior: Bound
 import QtQuick
 import Quickshell
 import Quickshell.Io
@@ -21,8 +22,7 @@ Item {
   property real speed: 0.6
   property real grain: 0.4
   property real blobs: 6
-  property real interaction: 0.7
-  readonly property var keys: ["lit", "atmosphere", "wander", "followDay", "followWeather", "speed", "grain", "blobs", "interaction"]
+  readonly property var keys: ["lit", "atmosphere", "wander", "followDay", "followWeather", "speed", "grain", "blobs"]
 
   property bool loaded: false
   property bool cardOpen: false
@@ -41,10 +41,6 @@ Item {
   readonly property real desat: sky.desat
   readonly property real rain: sky.rain
   readonly property real snow: sky.snow
-
-  // Cursor, global layout pixels (see the poller below).
-  property real cursorX: -10000
-  property real cursorY: -10000
 
   // Colours: crossfade to a new atmosphere, or wander through them all.
   property var fromRgb: Palettes.blend(Palettes.colorsFor("Ember", "clear"), Palettes.colorsFor("Ember", "clear"), 0)
@@ -130,7 +126,6 @@ Item {
   onSpeedChanged: touch()
   onGrainChanged: touch()
   onBlobsChanged: touch()
-  onInteractionChanged: touch()
   onLoadedChanged: if (loaded) { syncStillLayer(); if (followWeather) fetchWeather(); retarget() }
 
   Component.onCompleted: mkdir.running = true
@@ -179,19 +174,6 @@ Item {
   function fetchWeather() { if (!weatherProc.running) weatherProc.running = true }
   Timer { interval: 900000; running: root.active && root.followWeather; repeat: true; onTriggered: root.fetchWeather() }
 
-  // --- pointer: a layer under the windows gets no pointer events, so ask the compositor ---
-  Process {
-    id: cursorProc
-    running: root.active && root.interaction > 0
-    command: ["bash", "-c", "while :; do hyprctl cursorpos; sleep 0.04; done"]
-    stdout: SplitParser {
-      onRead: function(line) {
-        const m = /^(-?\d+),\s*(-?\d+)$/.exec(line.trim())
-        if (m) { root.cursorX = parseInt(m[1]); root.cursorY = parseInt(m[2]) }
-      }
-    }
-  }
-
   // --- IPC ---
   IpcHandler {
     target: "io.github.bmaltais.drift"
@@ -213,7 +195,6 @@ Item {
       const out = {}
       for (let i = 0; i < root.keys.length; i++) out[root.keys[i]] = root[root.keys[i]]
       out.weather = root.weatherText
-      out.cursor = [root.cursorX, root.cursorY]
       return JSON.stringify(out)
     }
   }

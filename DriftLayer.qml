@@ -28,14 +28,10 @@ PanelWindow {
     property color c5: win.drift.colors[5]
     property color c6: win.drift.colors[6]
     property color c7: win.drift.colors[7]
-    property vector2d mouse: Qt.vector2d(
-      (win.drift.cursorX - win.screen.x) / win.screen.width,
-      (win.drift.cursorY - win.screen.y) / win.screen.height)
     property real time: win.drift.t
     property real aspect: width / Math.max(1, height)
     property real blobs: win.drift.blobs
     property real grain: win.drift.grain
-    property real interaction: win.drift.interaction
     property real brightness: win.drift.brightness
     property real warmth: win.drift.warmth
     property real desat: win.drift.desat
