@@ -141,7 +141,7 @@ PanelWindow {
     Row {
       anchors { right: parent.right; rightMargin: 14; verticalCenter: parent.verticalCenter }
       spacing: 8
-      Animal { visible: sl.leftGlyph !== ""; text: sl.leftGlyph; anchors.verticalCenter: parent.verticalCenter }
+      Animal { text: sl.leftGlyph; anchors.verticalCenter: parent.verticalCenter }
       Item {
         id: track
         width: 158; height: 22; anchors.verticalCenter: parent.verticalCenter
@@ -172,8 +172,16 @@ PanelWindow {
           onPositionChanged: function(e) { if (pressed) pick(e.x) }
         }
       }
-      Animal { visible: sl.rightGlyph !== ""; text: sl.rightGlyph; anchors.verticalCenter: parent.verticalCenter }
-      Text { visible: sl.showValue; text: Math.round(sl.value); color: win.dimColor; font.pixelSize: 13; width: 20; horizontalAlignment: Text.AlignRight; anchors.verticalCenter: parent.verticalCenter; textFormat: Text.PlainText }
+      // The right slot is always as wide as an animal, so every track in the card starts and ends at the same x.
+      Item {
+        width: 26; height: 22; anchors.verticalCenter: parent.verticalCenter
+        Animal { text: sl.rightGlyph }
+        Text {
+          visible: sl.showValue; text: Math.round(sl.value); color: win.dimColor; font.pixelSize: 13
+          anchors { right: parent.right; verticalCenter: parent.verticalCenter }
+          textFormat: Text.PlainText
+        }
+      }
     }
   }
 
