@@ -99,7 +99,7 @@ Item {
     const names = Palettes.names
     const pos = (t / 45) % names.length
     const k = Math.floor(pos)
-    const f = pos - k
+    let f = pos - k
     f = f * f * (3 - 2 * f)
     baseColors = Palettes.blend(Palettes.colorsFor(names[k], condition, generated, hour), Palettes.colorsFor(names[(k + 1) % names.length], condition, generated, hour), f)
     mixT = 1
