@@ -4,6 +4,12 @@ An animated gradient wallpaper for the Omarchy shell, inspired by Drift, the mac
 that wander, grain, and light that follows the day and the weather. It is a shader (Qt RHI), drawn
 on the background layer of every screen.
 
+<p align="center">
+  <picture>
+    <img alt="Drift: opening the panel from the bar, picking atmospheres, following the day and the weather, searching a city, tuning the sliders" src="screenshots/drift.avif" width="100%" />
+  </picture>
+</p>
+
 - **Atmospheres** (a dropdown, plus Generate for a random new one and a shuffle button): Ember, Iris, Lagoon, Dusk, Aurora, Sage, Mono, and Weather (colours chosen by the sky). Or wander through them all.
 - **Follow the day**: the palette is pulled toward the sky's colours for the local hour (indigo night, orange and magenta at dawn and dusk, blue, pink and orange at midday). Optional "Show the time" adds a small clock caption bottom left (`preview-hour` via `previewHour` for testing).
 - **Follow the weather**: Open-Meteo for the location of Omarchy's weather panel (`omarchy-weather-location`, else its IP lookup at geo.omarchy.org). Click the city chip to search for another place (Open-Meteo geocoding; only the typed text is sent); it is saved in Drift's own settings and does not change Omarchy's location. "Current location" (always listed first) goes back to automatic. Cloud greys the colours, rain beads on the glass, snow falls, a storm darkens, and wind (speed and direction) swirls the colours.
@@ -31,6 +37,8 @@ wallpaper through the same hook a video wallpaper uses (`omarchy-shell backgroun
 keep working underneath; they just are not shown. Do not combine it with a video wallpaper.
 
 ## Develop
+
+`tours/hero.sh` records the animation above with the devkit's tour recorder (`scripts/tour.sh tours/hero.sh`; set `DEVKIT` to a checkout of omarchy-plugin-devkit if it is not next to this repo).
 
 `shaders/drift.frag` compiles to the committed `shaders/drift.frag.qsb`: run `scripts/build-shaders.sh` after editing it
 (needs `qsb` from qt6-shadertools). Test in a nested session with the devkit (`omarchy-plugin-devkit`): `dev up`, `dev reload`,
