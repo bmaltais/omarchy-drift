@@ -28,8 +28,15 @@ PanelWindow {
   readonly property int cardWidth: 372
   implicitWidth: cardWidth + 2 * pad
   implicitHeight: content.implicitHeight + 2 * pad
-  anchors { top: true; right: true }
-  margins { top: 60 - pad; right: 24 - pad }
+  screen: win.drift.cardScreen
+  anchors { top: true; left: true }
+  // Under the pointer (centred on it, a little below), kept on the screen; the old top-right spot when the pointer is unknown.
+  readonly property real maxLeft: Math.max(0, (screen ? screen.width : 1920) - implicitWidth)
+  readonly property real maxTop: Math.max(0, (screen ? screen.height : 1080) - implicitHeight)
+  margins {
+    left: win.drift.cardX >= 0 ? Math.max(0, Math.min(win.maxLeft, win.drift.cardX - win.implicitWidth / 2)) : win.maxLeft + win.pad - 24
+    top: win.drift.cardY >= 0 ? Math.max(0, Math.min(win.maxTop, win.drift.cardY + 14 - win.pad)) : 60 - win.pad
+  }
   // Only the card takes pointer input; the shadow margin lets clicks through.
   mask: Region { item: card }
   WlrLayershell.namespace: "omarchy-drift-settings"

@@ -30,6 +30,10 @@ Item {
 
   property bool loaded: false
   property bool cardOpen: false
+  // Where the card opens: the screen and the pointer position (in that screen) at the moment of the click.
+  property var cardScreen: Quickshell.screens.length > 0 ? Quickshell.screens[0] : null
+  property real cardX: -1
+  property real cardY: -1
   property bool paused: false
   property real pace: 1
   property real restClock: 0
@@ -299,13 +303,43 @@ Item {
   }
   Timer { interval: 900000; running: root.active && root.followWeather; repeat: true; onTriggered: root.fetchWeather() }
 
+  // --- the card opens under the pointer: one `hyprctl cursorpos` at open time, not tracking ---
+  Process {
+    id: cursorOnce
+    command: ["hyprctl", "cursorpos"]
+    stdout: StdioCollector {
+      onStreamFinished: {
+        const m = /(-?\d+),\s*(-?\d+)/.exec(text)
+        if (m) {
+          const gx = parseInt(m[1]), gy = parseInt(m[2])
+          for (const sc of Quickshell.screens) {
+            if (gx >= sc.x && gx < sc.x + sc.width && gy >= sc.y && gy < sc.y + sc.height) {
+              root.cardScreen = sc
+              root.cardX = gx - sc.x
+              root.cardY = gy - sc.y
+              break
+            }
+          }
+        }
+        root.cardOpen = true
+      }
+    }
+    onExited: function(code) { if (code !== 0) root.cardOpen = true }
+  }
+  function openCard() {
+    cardX = -1
+    cardY = -1
+    if (cursorOnce.running) return
+    cursorOnce.running = true
+  }
+
   // --- IPC ---
   IpcHandler {
     target: "io.github.bmaltais.drift"
     function toggle(): void { root.lit = !root.lit }
     function on(): void { root.lit = true }
     function off(): void { root.lit = false }
-    function open(): void { root.cardOpen = true }
+    function open(): void { root.openCard() }
     function close(): void { root.cardOpen = false }
     function set(key: string, value: string): void {
       if (root.keys.indexOf(key) < 0) return
