@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "id": "io.github.bmaltais.drift",
+  "name": "Drift",
+  "version": "0.1.0",
+  "author": "Bernard Maltais",
+  "description": "An animated gradient wallpaper: drifting colour blobs that follow the time of day and the weather.",
+  "kinds": ["service"],
+  "keepLoaded": true,
+  "entryPoints": { "service": "Service.qml" }
+}
