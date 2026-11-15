@@ -1,5 +1,7 @@
 // The settings card, laid out after the macOS Drift app: `omarchy-shell io.github.bmaltais.drift open`. Escape or the red dot closes it.
 import QtQuick
+import QtQuick.Effects
+import QtQuick.Shapes
 import Quickshell
 import Quickshell.Wayland
 import "Palettes.js" as Palettes
@@ -54,6 +56,32 @@ PanelWindow {
       Text { visible: chip.label !== ""; text: chip.label; color: win.textColor; font.pixelSize: 12; anchors.verticalCenter: parent.verticalCenter; textFormat: Text.PlainText }
     }
     MouseArea { anchors.fill: parent; onClicked: chip.clicked() }
+  }
+
+  // Pause / play, drawn (the font's pause glyph comes out as a boxed emoji).
+  component PlayPause: Rectangle {
+    id: pp
+    property bool paused: false
+    signal clicked()
+    height: 26; width: 44; radius: 7; color: win.chipColor
+    Row {
+      visible: !pp.paused
+      anchors.centerIn: parent; spacing: 3
+      Rectangle { width: 3; height: 10; radius: 1; color: win.textColor }
+      Rectangle { width: 3; height: 10; radius: 1; color: win.textColor }
+    }
+    Shape {
+      visible: pp.paused
+      anchors.centerIn: parent; width: 9; height: 10
+      ShapePath {
+        fillColor: win.textColor; strokeColor: "transparent"
+        startX: 0; startY: 0
+        PathLine { x: 9; y: 5 }
+        PathLine { x: 0; y: 10 }
+        PathLine { x: 0; y: 0 }
+      }
+    }
+    MouseArea { anchors.fill: parent; onClicked: pp.clicked() }
   }
 
   component Toggle: Item {
@@ -156,10 +184,14 @@ PanelWindow {
     // Header: the live gradient, fading into the card.
     Item {
       width: parent.width; height: win.headerHeight
-      Rectangle {
-        anchors.fill: parent; radius: 14; clip: true; color: "black"
+      // The preview, masked to the card's rounded top corners (a plain clip would leave them square).
+      Item {
+        anchors.fill: parent
+        layer.enabled: true
+        layer.effect: MultiEffect { maskEnabled: true; maskSource: headerMask }
         DriftView { anchors.fill: parent; drift: win.drift }
       }
+      Rectangle { id: headerMask; anchors.fill: parent; radius: 14; visible: false; layer.enabled: true }
       Rectangle {
         anchors { left: parent.left; right: parent.right; bottom: parent.bottom }
         height: 90
@@ -258,7 +290,7 @@ PanelWindow {
       Row {
         anchors { left: parent.left; leftMargin: 16; verticalCenter: parent.verticalCenter }
         spacing: 8
-        Chip { glyph: win.drift.paused ? "▶" : "⏸"; onClicked: win.drift.paused = !win.drift.paused }
+        PlayPause { paused: win.drift.paused; onClicked: win.drift.paused = !win.drift.paused }
         Chip { glyph: "⤮"; onClicked: win.drift.shuffle() }
       }
     }
