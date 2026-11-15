@@ -164,13 +164,14 @@ Item {
   function touch() { if (loaded) saveTimer.restart() }
   onLitChanged: { touch(); syncStillLayer() }
   onFollowDayChanged: touch()
-  onFollowWeatherChanged: { touch(); if (followWeather) fetchWeather() }
+  onFollowWeatherChanged: { touch(); if (loaded && followWeather) fetchWeather() }
   onSpeedChanged: touch()
   onGrainChanged: touch()
   onBlobsChanged: touch()
   onRestDriftChanged: touch()
   onShowTimeChanged: touch()
   onLocationChanged: {
+    if (!loaded) return
     touch()
     weather = null
     refetchWeather()
@@ -227,6 +228,7 @@ Item {
     id: weatherProc
     stdout: StdioCollector {
       onStreamFinished: {
+        if (root.weatherPending) return   // superseded by a newer location; its restart follows the exit
         let ok = false
         try {
           const w = JSON.parse(text)
@@ -240,6 +242,7 @@ Item {
         if (!ok) root.weatherFailed()
       }
     }
+    onExited: if (root.weatherPending) { root.weatherPending = false; root.fetchWeather() }
   }
   // The command is built here, not bound: a change handler runs before bindings re-evaluate, and would fetch the old place.
   function fetchWeather() {
@@ -249,10 +252,12 @@ Item {
       : ["bash", "-c", weatherScript]
     weatherProc.running = true
   }
-  // A new location while a fetch runs: stop it and start again from a clean state.
+  // A new location while a fetch runs: the running one is superseded (its result is ignored) and a new one starts once
+  // that process has exited. Starting before it exits would be refused.
+  property bool weatherPending: false
   function refetchWeather() {
     if (!followWeather) return
-    if (weatherProc.running) { weatherProc.running = false; Qt.callLater(fetchWeather) }
+    if (weatherProc.running) { weatherPending = true; weatherProc.running = false }
     else fetchWeather()
   }
 
