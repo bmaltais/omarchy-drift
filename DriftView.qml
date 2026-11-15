@@ -23,4 +23,6 @@ ShaderEffect {
   property real desat: view.drift.desat
   property real rain: view.drift.rain
   property real snow: view.drift.snow
+  property real wind: view.drift.wind
+  property real windDir: view.drift.windDir
 }

@@ -39,7 +39,7 @@ Item {
   property real hour: new Date().getHours() + new Date().getMinutes() / 60
   property var weather: null   // { name, temp, code, isDay }
   readonly property string condition: weather ? Palettes.conditionOf(weather.code) : "clear"
-  readonly property string weatherText: weather ? Palettes.describe(weather.code) + ", " + Math.round(weather.temp) + "°" : ""
+  readonly property string weatherText: weather ? Palettes.describe(weather.code) + ", " + Math.round(weather.temp) + "°" + (weather.wind >= 5 ? ", wind " + Math.round(weather.wind) + " km/h" : "") : ""
   readonly property var sky: followWeather && weather ? Palettes.skyFor(condition) : Palettes.skyFor("clear")
   readonly property var light: followDay ? Palettes.daylight(hour) : { brightness: 1, warmth: 0 }
   readonly property real brightness: light.brightness * sky.dim
@@ -47,6 +47,9 @@ Item {
   readonly property real desat: sky.desat
   readonly property real rain: sky.rain
   readonly property real snow: sky.snow
+  // Wind from the weather report: 0 calm .. 1 at 45 km/h and up; direction in radians.
+  readonly property real wind: followWeather && weather && weather.wind ? Math.min(1, weather.wind / 45) : 0
+  readonly property real windDir: weather && weather.windDir ? weather.windDir * Math.PI / 180 : 0
 
   // Colours: crossfade to a new atmosphere, or wander through them all.
   property var fromRgb: Palettes.blend(Palettes.colorsFor("Ember", "clear"), Palettes.colorsFor("Ember", "clear"), 0)
@@ -191,8 +194,8 @@ Item {
     '  read -r lat lon name < <(curl -fsS --max-time 5 https://geo.omarchy.org/ | jq -r \'"\\(.latitude) \\(.longitude) \\(.name // "")"\')',
     'fi',
     '[[ $lat =~ $num && $lon =~ $num ]] || exit 1',
-    'curl -fsS --max-time 10 "https://api.open-meteo.com/v1/forecast?latitude=$lat&longitude=$lon&current=temperature_2m,weather_code,is_day&timezone=auto" |',
-    '  jq -c --arg name "$name" \'{name: $name, temp: .current.temperature_2m, code: .current.weather_code, isDay: .current.is_day}\''
+    'curl -fsS --max-time 10 "https://api.open-meteo.com/v1/forecast?latitude=$lat&longitude=$lon&current=temperature_2m,weather_code,is_day,wind_speed_10m,wind_direction_10m&timezone=auto" |',
+    '  jq -c --arg name "$name" \'{name: $name, temp: .current.temperature_2m, code: .current.weather_code, isDay: .current.is_day, wind: .current.wind_speed_10m, windDir: .current.wind_direction_10m}\''
   ].join("\n")
 
   Process {
@@ -225,8 +228,8 @@ Item {
       else if (typeof cur === "number") { const n = parseFloat(value); if (!isNaN(n)) root[key] = n }
       else if (typeof cur === "string") root[key] = value
     }
-    // Preview a weather code (WMO: 61 rain, 71 snow, 95 storm) until the next real report.
-    function preview(code: string): void { root.weather = { name: "preview", temp: 5, code: parseInt(code), isDay: 1 } }
+    // Preview a weather code (WMO: 61 rain, 71 snow, 95 storm) and a wind in km/h until the next real report.
+    function preview(code: string, windKmh: string): void { root.weather = { name: "preview", temp: 5, code: parseInt(code), isDay: 1, wind: parseFloat(windKmh) || 0, windDir: 250 } }
     function generate(): void { root.generate() }
     function shuffle(): void { root.shuffle() }
     // Preview a local hour (21.9 = 21:54) until the next 20 s clock tick.

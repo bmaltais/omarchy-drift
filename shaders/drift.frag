@@ -16,6 +16,8 @@ layout(std140, binding = 0) uniform buf {
   float desat;       // 0..1, grey the colours (cloud, fog)
   float rain;        // 0..1
   float snow;        // 0..1
+  float wind;        // 0..1, how hard it blows
+  float windDir;     // radians
 };
 
 // Float-only hash of the pixel, 0..1 (no sin, no integer ops: it must compile on every backend).
@@ -78,6 +80,12 @@ void main() {
   vec2 uv = qt_TexCoord0;
   vec2 p = vec2(uv.x * aspect, uv.y);
 
+  // Wind swirls the colours: a slow curl everywhere, and gusts along the wind direction.
+  vec2 pw = p;
+  pw += wind * 0.14 * vec2(sin(p.y * 4.0 + time * 1.1), cos(p.x * 4.0 + time * 0.9));
+  vec2 gust = vec2(cos(windDir), sin(windDir));
+  pw += gust * wind * 0.09 * sin(time * 0.6 + dot(p, gust) * 5.0);
+
   vec3 accum = vec3(0.0);
   float wsum = 0.0;
   int n = int(blobs + 0.5);
@@ -88,7 +96,7 @@ void main() {
                     0.5 + 0.46 * cos(time * 0.27 * (1.0 + 0.13 * fi) + fi * 3.7));
     pos.x *= aspect;
     float r = 0.36 + 0.09 * sin(time * 0.2 + fi * 1.3);
-    vec2 d = p - pos;
+    vec2 d = pw - pos;
     float w = exp(-dot(d, d) / (r * r));
     accum += colorAt(i) * w;
     wsum += w;

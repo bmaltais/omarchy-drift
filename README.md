@@ -6,7 +6,7 @@ on the background layer of every screen.
 
 - **Atmospheres** (a dropdown, plus Generate for a random new one and a shuffle button): Ember, Iris, Lagoon, Dusk, Aurora, Sage, Mono, and Weather (colours chosen by the sky). Or wander through them all.
 - **Follow the day**: the palette is pulled toward the sky's colours for the local hour (indigo night, orange and magenta at dawn and dusk, blue, pink and orange at midday). Optional "Show the time" adds a small clock caption bottom left (`preview-hour` via `previewHour` for testing).
-- **Follow the weather**: Open-Meteo for the location of Omarchy's weather panel (`omarchy-weather-location`, else its IP lookup at geo.omarchy.org). Cloud greys the colours, rain beads on the glass, snow falls, a storm darkens.
+- **Follow the weather**: Open-Meteo for the location of Omarchy's weather panel (`omarchy-weather-location`, else its IP lookup at geo.omarchy.org). Cloud greys the colours, rain beads on the glass, snow falls, a storm darkens, and wind (speed and direction) swirls the colours.
 - **Bar icon** (a droplet): left-click opens the settings card, right-click turns Drift on or off. Add `{ "id": "io.github.bmaltais.drift" }` to a bar section in `shell.json`.
 - **Speed, grain, blob count** sliders, and Rest & drift (30 s still, 30 s moving). The card follows the Mac app: live preview header, pause, shuffle. (Pointer interaction is left out for now; the shader still has the input.)
 
