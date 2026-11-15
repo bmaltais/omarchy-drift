@@ -5,7 +5,19 @@
   "version": "0.1.0",
   "author": "Bernard Maltais",
   "description": "An animated gradient wallpaper: drifting colour blobs that follow the time of day and the weather.",
-  "kinds": ["service"],
+  "kinds": [
+    "service",
+    "bar-widget"
+  ],
   "keepLoaded": true,
-  "entryPoints": { "service": "Service.qml" }
+  "entryPoints": {
+    "service": "Service.qml",
+    "barWidget": "BarWidget.qml"
+  },
+  "barWidget": {
+    "displayName": "Drift",
+    "description": "Open Drift's settings; right-click turns the wallpaper on or off",
+    "category": "Appearance",
+    "allowMultiple": false
+  }
 }

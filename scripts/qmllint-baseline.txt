@@ -1,3 +1,15 @@
+BarWidget.qml	import	BarIconButton was not found. Did you add all imports and dependencies?
+BarWidget.qml	import	Failed to import qs.Commons. Are your import paths set up properly?
+BarWidget.qml	import	Failed to import qs.Ui. Are your import paths set up properly?
+BarWidget.qml	import	Warnings occurred while importing module "qs.Commons":
+BarWidget.qml	import	Warnings occurred while importing module "qs.Ui":
+BarWidget.qml	inheritance-cycle	BarWidget is part of an inheritance cycle: BarWidget -> BarWidget
+BarWidget.qml	type-instantiated-recursively	Type "BarWidget" can't be instantiated recursively
+BarWidget.qml	unqualified	Style
+BarWidget.qml	unqualified	anchors
+BarWidget.qml	unqualified	parent
+BarWidget.qml	unresolved-type	Type BarWidget is used but it is not resolved
+BarWidget.qml	unresolved-type	Type anchors is used but it is not resolved
 DriftLayer.qml	uncreatable-type	Type PanelWindow is not creatable.
 SettingsCard.qml	uncreatable-type	Type PanelWindow is not creatable.
 SettingsCard.qml	unqualified	margins
