@@ -218,7 +218,10 @@ Item {
       onStreamFinished: {
         try {
           const w = JSON.parse(text)
-          if (typeof w.code === "number" && typeof w.temp === "number") root.weather = w
+          if (typeof w.code === "number" && typeof w.temp === "number") {
+            root.weather = w
+            if (!root.location) root.autoName = String(w.name || "").split(",")[0]
+          }
         } catch (e) { console.warn("drift: weather report unreadable") }
       }
     }
@@ -240,6 +243,7 @@ Item {
 
   // --- city search (Open-Meteo geocoding): only the typed text leaves the machine ---
   property var places: []
+  property string autoName: ""   // the city found automatically, shown next to "Current location"
   property string placeQuery: ""
   property bool searching: false
   property bool searchAgain: false

@@ -425,6 +425,27 @@ PanelWindow {
           Keys.onEscapePressed: locPopup.visible = false
         }
       }
+      // Back to the automatic location, always on offer.
+      Rectangle {
+        width: parent.width; height: 40; radius: 6
+        color: autoMouse.containsMouse ? win.accent : "transparent"
+        Text {
+          x: 8; anchors.verticalCenter: parent.verticalCenter
+          text: win.drift.location === null ? "✓" : ""; color: win.textColor; font.pixelSize: 12; textFormat: Text.PlainText
+        }
+        Column {
+          x: 26; anchors.verticalCenter: parent.verticalCenter
+          Text { text: "Current location"; color: win.textColor; font.pixelSize: 13; textFormat: Text.PlainText }
+          Text {
+            text: win.drift.autoName !== "" ? win.drift.autoName : "Detected automatically"
+            color: autoMouse.containsMouse ? "#d8e6ff" : win.dimColor; font.pixelSize: 11; textFormat: Text.PlainText
+          }
+        }
+        MouseArea {
+          id: autoMouse; anchors.fill: parent; hoverEnabled: true
+          onClicked: { win.drift.useOmarchyLocation(); locPopup.visible = false }
+        }
+      }
       Repeater {
         model: win.drift.places
         Rectangle {
@@ -446,16 +467,6 @@ PanelWindow {
       Text {
         visible: win.drift.placeQuery.length >= 2 && !win.drift.searching && win.drift.places.length === 0
         text: "No matches"; color: win.dimColor; font.pixelSize: 12; leftPadding: 8; topPadding: 4; bottomPadding: 4; textFormat: Text.PlainText
-      }
-      Rectangle {
-        visible: win.drift.location !== null
-        width: parent.width; height: 30; radius: 6
-        color: autoMouse.containsMouse ? win.accent : "transparent"
-        Text { x: 8; anchors.verticalCenter: parent.verticalCenter; text: "Use Omarchy's location"; color: win.textColor; font.pixelSize: 13; textFormat: Text.PlainText }
-        MouseArea {
-          id: autoMouse; anchors.fill: parent; hoverEnabled: true
-          onClicked: { win.drift.useOmarchyLocation(); locPopup.visible = false }
-        }
       }
     }
   }
