@@ -1,4 +1,4 @@
-// The settings card, laid out after the macOS Drift app: `omarchy-shell io.github.bmaltais.drift open`. Escape or the red dot closes it.
+// The settings card, laid out after the macOS Drift app: `omarchy-shell io.github.bmaltais.drift open`. Escape or the ✕ closes it.
 import QtQuick
 import QtQuick.Effects
 import QtQuick.Shapes
@@ -224,14 +224,8 @@ PanelWindow {
           GradientStop { position: 1; color: "#8c000000" }
         }
       }
-      Row {
-        x: 12; y: 12; spacing: 8
-        Rectangle { width: 12; height: 12; radius: 6; color: "#ff5f57"; MouseArea { anchors.fill: parent; anchors.margins: -3; onClicked: win.drift.cardOpen = false } }
-        Rectangle { width: 12; height: 12; radius: 6; color: "#febc2e" }
-        Rectangle { width: 12; height: 12; radius: 6; color: "#28c840" }
-      }
       Rectangle {
-        anchors { right: parent.right; rightMargin: 14; top: parent.top; topMargin: 10 }
+        anchors { left: parent.left; leftMargin: 14; top: parent.top; topMargin: 12 }
         height: 22; width: pillRow.implicitWidth + 22; radius: 11; color: "#70000000"
         Row {
           id: pillRow; anchors.centerIn: parent; spacing: 6
@@ -242,6 +236,19 @@ PanelWindow {
           }
         }
         MouseArea { anchors.fill: parent; onClicked: win.drift.lit = !win.drift.lit }
+      }
+      // Close: a drawn cross in a dark round button, top right.
+      Rectangle {
+        anchors { right: parent.right; rightMargin: 14; top: parent.top; topMargin: 12 }
+        width: 22; height: 22; radius: 11; color: closeMouse.containsMouse ? "#99000000" : "#70000000"
+        Shape {
+          anchors.centerIn: parent; width: 8; height: 8
+          ShapePath { strokeColor: win.textColor; strokeWidth: 1.5; fillColor: "transparent"; capStyle: ShapePath.RoundCap
+            startX: 0; startY: 0; PathLine { x: 8; y: 8 } }
+          ShapePath { strokeColor: win.textColor; strokeWidth: 1.5; fillColor: "transparent"; capStyle: ShapePath.RoundCap
+            startX: 8; startY: 0; PathLine { x: 0; y: 8 } }
+        }
+        MouseArea { id: closeMouse; anchors.fill: parent; hoverEnabled: true; onClicked: win.drift.cardOpen = false }
       }
       Column {
         anchors { left: parent.left; leftMargin: 20; bottom: parent.bottom; bottomMargin: 14 }
