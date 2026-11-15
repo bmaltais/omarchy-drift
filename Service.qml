@@ -212,17 +212,32 @@ Item {
     '  jq -c --arg name "$name" \'{name: $name, temp: .current.temperature_2m, code: .current.weather_code, isDay: .current.is_day, wind: .current.wind_speed_10m, windDir: .current.wind_direction_10m}\''
   ].join("\n")
 
+  // A failed fetch (no network yet at login, a timeout) is retried with a growing delay, so the weather is not
+  // missing until the next 15 minute tick.
+  property int retryDelay: 15000
+  Timer { id: retryTimer; onTriggered: root.fetchWeather() }
+  function weatherFailed() {
+    if (!followWeather || !active) return
+    retryTimer.interval = retryDelay
+    retryTimer.restart()
+    retryDelay = Math.min(retryDelay * 2, 300000)
+  }
+
   Process {
     id: weatherProc
     stdout: StdioCollector {
       onStreamFinished: {
+        let ok = false
         try {
           const w = JSON.parse(text)
           if (typeof w.code === "number" && typeof w.temp === "number") {
             root.weather = w
             if (!root.location) root.autoName = String(w.name || "").split(",")[0]
+            root.retryDelay = 15000
+            ok = true
           }
-        } catch (e) { console.warn("drift: weather report unreadable") }
+        } catch (e) { /* empty or unreadable output: handled below */ }
+        if (!ok) root.weatherFailed()
       }
     }
   }
