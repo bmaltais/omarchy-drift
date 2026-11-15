@@ -1,6 +1,6 @@
 # Drift for Omarchy
 
-An animated gradient wallpaper for the Omarchy shell, inspired by the macOS app Drift (not affiliated with it): soft colour blobs
+An animated gradient wallpaper for the Omarchy shell, inspired by Drift, the macOS app by [@ow](https://x.com/ow) (not affiliated with it): soft colour blobs
 that wander, grain, and light that follows the day and the weather. It is a shader (Qt RHI), drawn
 on the background layer of every screen.
 
@@ -35,3 +35,9 @@ keep working underneath; they just are not shown. Do not combine it with a video
 `shaders/drift.frag` compiles to the committed `shaders/drift.frag.qsb`: run `scripts/build-shaders.sh` after editing it
 (needs `qsb` from qt6-shadertools). Test in a nested session with the devkit (`omarchy-plugin-devkit`): `dev up`, `dev reload`,
 `dev ipc io.github.bmaltais.drift on`, `dev shot`. `qmllint` baselines only toolchain limits (Quickshell types the linter cannot see).
+
+## Credits
+
+The idea, the look and the name come from **Drift**, a native macOS app (a Metal shader) by [@ow](https://x.com/ow):
+[the original post](https://x.com/ow/status/2121743789702467904). This is an independent Linux/Omarchy implementation
+written from the author's public screenshots and description; it shares no code with the Mac app and is not affiliated with or endorsed by it.
