@@ -24,7 +24,8 @@ Item {
   property real blobs: 6
   property bool restDrift: false
   property var generated: []
-  readonly property var keys: ["lit", "atmosphere", "wander", "followDay", "followWeather", "speed", "grain", "blobs", "restDrift", "generated"]
+  property bool showTime: false
+  readonly property var keys: ["lit", "atmosphere", "wander", "followDay", "followWeather", "speed", "grain", "blobs", "restDrift", "generated", "showTime"]
 
   property bool loaded: false
   property bool cardOpen: false
@@ -52,7 +53,15 @@ Item {
   property var baseColors: Palettes.colorsFor("Ember", "clear")
   property real mixT: 1
   readonly property var shownRgb: Palettes.blend(fromRgb, baseColors, mixT)
-  readonly property var colors: shownRgb.map(function(c) { return Qt.rgba(c.r, c.g, c.b, 1) })
+  // Follow the day pulls the palette toward the sky's colours for the hour.
+  property real skyMix: followDay ? 0.65 : 0
+  Behavior on skyMix { NumberAnimation { duration: 1200 } }
+  readonly property var mixedRgb: skyMix > 0.001 ? Palettes.blend(shownRgb, Palettes.skyAt(hour), skyMix) : shownRgb
+  readonly property var colors: mixedRgb.map(function(c) { return Qt.rgba(c.r, c.g, c.b, 1) })
+
+  // The time caption on the wallpaper.
+  property string clockText: Qt.formatTime(new Date(), "HH:mm")
+  Timer { interval: 5000; running: root.active && root.showTime; repeat: true; triggeredOnStart: true; onTriggered: root.clockText = Qt.formatTime(new Date(), "HH:mm") }
 
   function generate() {
     generated = Palettes.generate()
@@ -151,6 +160,7 @@ Item {
   onGrainChanged: touch()
   onBlobsChanged: touch()
   onRestDriftChanged: touch()
+  onShowTimeChanged: touch()
   onLoadedChanged: if (loaded) { syncStillLayer(); if (followWeather) fetchWeather(); retarget() }
 
   Component.onCompleted: mkdir.running = true
@@ -218,6 +228,8 @@ Item {
     function preview(code: string): void { root.weather = { name: "preview", temp: 5, code: parseInt(code), isDay: 1 } }
     function generate(): void { root.generate() }
     function shuffle(): void { root.shuffle() }
+    // Preview a local hour (21.9 = 21:54) until the next 20 s clock tick.
+    function previewHour(h: string): void { const n = parseFloat(h); if (!isNaN(n)) root.hour = n }
     function status(): string {
       const out = {}
       for (let i = 0; i < root.keys.length; i++) out[root.keys[i]] = root[root.keys[i]]

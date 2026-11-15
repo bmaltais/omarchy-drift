@@ -62,11 +62,35 @@ function blend(a, b, t) {
   return out
 }
 
-// Follow the day: brightness and warmth from the local hour (0..24). Dawn and dusk are warm, night is dark and cool.
+// Follow the day: the sky's colours by local hour (0..24), blended from four keyframes. Night is indigo and violet,
+// dawn and dusk are orange and magenta, midday is blue, pink and orange.
+var skyKeys = [
+  { h: 0,    c: ["#1a1080", "#2e1590", "#4a1a8a", "#12084a", "#3a1a90", "#220e6a", "#5a2290", "#16105a"] },
+  { h: 5,    c: ["#1a1080", "#2e1590", "#4a1a8a", "#12084a", "#3a1a90", "#220e6a", "#5a2290", "#16105a"] },
+  { h: 7,    c: ["#e0703a", "#d04a8a", "#6a4ab8", "#f0a070", "#4a5ac0", "#b04a9a", "#f08a50", "#7a6ac8"] },
+  { h: 11.5, c: ["#4a6ac0", "#b84a9a", "#e0602a", "#9a62b8", "#d8582a", "#c04a9a", "#5a74c8", "#e8782a"] },
+  { h: 15,   c: ["#4a6ac0", "#b84a9a", "#e0602a", "#9a62b8", "#d8582a", "#c04a9a", "#5a74c8", "#e8782a"] },
+  { h: 18.5, c: ["#e05a30", "#b8408a", "#5a3a9a", "#f08a40", "#8a3a9a", "#c84a70", "#3a3a9a", "#e86a3a"] },
+  { h: 21,   c: ["#1a1080", "#2e1590", "#4a1a8a", "#12084a", "#3a1a90", "#220e6a", "#5a2290", "#16105a"] },
+  { h: 24,   c: ["#1a1080", "#2e1590", "#4a1a8a", "#12084a", "#3a1a90", "#220e6a", "#5a2290", "#16105a"] }
+]
+
+function skyAt(hour) {
+  var h = ((hour % 24) + 24) % 24
+  for (var i = 1; i < skyKeys.length; i++) {
+    if (h <= skyKeys[i].h) {
+      var a = skyKeys[i - 1], b = skyKeys[i]
+      var t = (h - a.h) / (b.h - a.h)
+      return blend(a.c, b.c, t * t * (3 - 2 * t))
+    }
+  }
+  return blend(skyKeys[0].c, skyKeys[0].c, 0)
+}
+
+// A little extra dimming at night; the colours themselves carry the rest.
 function daylight(hour) {
   var day = Math.max(0, Math.sin(Math.PI * (hour - 6) / 12))
-  var warm = Math.exp(-Math.pow(hour - 7, 2) / 2) + Math.exp(-Math.pow(hour - 18.5, 2) / 2)
-  return { brightness: 0.45 + 0.55 * Math.sqrt(day), warmth: warm * 0.9 - (1 - day) * 0.45 }
+  return { brightness: 0.85 + 0.15 * Math.sqrt(day), warmth: 0 }
 }
 
 // Weather -> shader inputs.

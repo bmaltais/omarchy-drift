@@ -309,6 +309,8 @@ PanelWindow {
         Separator {}
         Toggle { label: "Follow the day"; hint: "Local light, slowly shifting"; checked: win.drift.followDay; onFlipped: function(v) { win.drift.followDay = v } }
         Separator {}
+        Toggle { label: "Show the time"; hint: "A small clock on the wallpaper, bottom left"; checked: win.drift.showTime; onFlipped: function(v) { win.drift.showTime = v } }
+        Separator {}
         Toggle {
           label: "Follow the weather"
           hint: win.drift.followWeather ? (win.drift.weatherText || "Looking up the weather…") : "Rain, snow and cloud on the glass"
