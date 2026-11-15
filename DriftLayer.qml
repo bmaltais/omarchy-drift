@@ -24,7 +24,7 @@ PanelWindow {
     anchors { left: parent.left; leftMargin: 56; bottom: parent.bottom; bottomMargin: 48 }
     spacing: 4
     Text {
-      visible: win.drift.followDay
+      visible: win.drift.followDay || win.drift.atmosphere === "Day"
       text: "FOLLOW THE DAY"
       color: "#c0ffffff"; font.pixelSize: 13; font.weight: Font.DemiBold; font.letterSpacing: 3.5; font.family: "monospace"
       textFormat: Text.PlainText

@@ -21,7 +21,7 @@ var weatherAtmospheres = {
   "storm":  ["#3a2a6a", "#1a1a3a", "#5a3a8a", "#242a5a", "#4a2a7a", "#12122c", "#6a4a9a", "#2a2050"]
 }
 
-var names = ["Ember", "Iris", "Lagoon", "Dusk", "Aurora", "Sage", "Mono", "Weather"]
+var names = ["Ember", "Iris", "Lagoon", "Dusk", "Aurora", "Sage", "Mono", "Weather", "Day"]
 
 function conditionOf(code) {
   // WMO weather codes as returned by Open-Meteo.
@@ -41,7 +41,8 @@ function describe(code) {
   return { fog: "Fog", rain: "Rain", snow: "Snow", storm: "Thunderstorm" }[c]
 }
 
-function colorsFor(name, condition, generated) {
+function colorsFor(name, condition, generated, hour) {
+  if (name === "Day") return skyAt(hour === undefined ? 12 : hour)
   if (name === "Generated" && generated && generated.length === 8) return generated
   if (name === "Weather") return weatherAtmospheres[condition] || weatherAtmospheres.clear
   return atmospheres[name] || atmospheres.Ember

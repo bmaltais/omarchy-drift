@@ -77,12 +77,13 @@ Item {
   function retarget() {
     if (wander) return
     fromRgb = shownRgb
-    baseColors = Palettes.colorsFor(atmosphere, condition, generated)
+    baseColors = Palettes.colorsFor(atmosphere, condition, generated, hour)
     mixT = 0
     mixAnim.restart()
   }
   onAtmosphereChanged: { retarget(); touch() }
   onGeneratedChanged: { if (atmosphere === "Generated") retarget(); touch() }
+  onHourChanged: if (atmosphere === "Day") retarget()
   onConditionChanged: if (atmosphere === "Weather") retarget()
   onWanderChanged: {
     touch()
@@ -96,7 +97,7 @@ Item {
     const k = Math.floor(pos)
     const f = pos - k
     f = f * f * (3 - 2 * f)
-    baseColors = Palettes.blend(Palettes.colorsFor(names[k], condition, generated), Palettes.colorsFor(names[(k + 1) % names.length], condition, generated), f)
+    baseColors = Palettes.blend(Palettes.colorsFor(names[k], condition, generated, hour), Palettes.colorsFor(names[(k + 1) % names.length], condition, generated, hour), f)
     mixT = 1
   }
 
