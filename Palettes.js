@@ -41,7 +41,8 @@ function describe(code) {
   return { fog: "Fog", rain: "Rain", snow: "Snow", storm: "Thunderstorm" }[c]
 }
 
-function colorsFor(name, condition) {
+function colorsFor(name, condition, generated) {
+  if (name === "Generated" && generated && generated.length === 8) return generated
   if (name === "Weather") return weatherAtmospheres[condition] || weatherAtmospheres.clear
   return atmospheres[name] || atmospheres.Ember
 }
@@ -78,4 +79,33 @@ function skyFor(condition) {
     case "storm":  return { desat: 0.1,  rain: 1, snow: 0, dim: 0.7 }
     default:       return { desat: 0,    rain: 0, snow: 0, dim: 1.0 }
   }
+}
+
+function hsl(h, s, l) {
+  var a = s * Math.min(l, 1 - l)
+  function f(n) {
+    var k = (n + h * 12) % 12
+    var c = l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1))
+    var x = Math.round(255 * c).toString(16)
+    return x.length < 2 ? "0" + x : x
+  }
+  return "#" + f(0) + f(8) + f(4)
+}
+
+// A new random atmosphere: two hues, eight shades.
+function generate() {
+  var h1 = Math.random()
+  var h2 = (h1 + 0.12 + Math.random() * 0.5) % 1
+  var out = []
+  for (var i = 0; i < 8; i++) {
+    var h = ((i % 2 === 0 ? h1 : h2) + (Math.random() - 0.5) * 0.08 + 1) % 1
+    out.push(hsl(h, 0.55 + 0.35 * Math.random(), 0.32 + 0.3 * Math.random()))
+  }
+  return out
+}
+
+function validGenerated(list) {
+  if (!Array.isArray(list) || list.length !== 8) return false
+  for (var i = 0; i < 8; i++) if (!/^#[0-9a-fA-F]{6}$/.test(String(list[i]))) return false
+  return true
 }

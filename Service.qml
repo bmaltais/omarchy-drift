@@ -22,10 +22,15 @@ Item {
   property real speed: 0.6
   property real grain: 0.4
   property real blobs: 6
-  readonly property var keys: ["lit", "atmosphere", "wander", "followDay", "followWeather", "speed", "grain", "blobs"]
+  property bool restDrift: false
+  property var generated: []
+  readonly property var keys: ["lit", "atmosphere", "wander", "followDay", "followWeather", "speed", "grain", "blobs", "restDrift", "generated"]
 
   property bool loaded: false
   property bool cardOpen: false
+  property bool paused: false
+  property real pace: 1
+  property real restClock: 0
   readonly property bool active: lit
 
   // Clock, local hour, weather.
@@ -49,14 +54,26 @@ Item {
   readonly property var shownRgb: Palettes.blend(fromRgb, baseColors, mixT)
   readonly property var colors: shownRgb.map(function(c) { return Qt.rgba(c.r, c.g, c.b, 1) })
 
+  function generate() {
+    generated = Palettes.generate()
+    wander = false
+    atmosphere = "Generated"
+  }
+  function shuffle() {
+    const names = Palettes.names
+    wander = false
+    atmosphere = names[Math.floor(Math.random() * names.length)]
+  }
+
   function retarget() {
     if (wander) return
     fromRgb = shownRgb
-    baseColors = Palettes.colorsFor(atmosphere, condition)
+    baseColors = Palettes.colorsFor(atmosphere, condition, generated)
     mixT = 0
     mixAnim.restart()
   }
   onAtmosphereChanged: { retarget(); touch() }
+  onGeneratedChanged: { if (atmosphere === "Generated") retarget(); touch() }
   onConditionChanged: if (atmosphere === "Weather") retarget()
   onWanderChanged: {
     touch()
@@ -70,16 +87,22 @@ Item {
     const k = Math.floor(pos)
     const f = pos - k
     f = f * f * (3 - 2 * f)
-    baseColors = Palettes.blend(Palettes.colorsFor(names[k], condition), Palettes.colorsFor(names[(k + 1) % names.length], condition), f)
+    baseColors = Palettes.blend(Palettes.colorsFor(names[k], condition, generated), Palettes.colorsFor(names[(k + 1) % names.length], condition, generated), f)
     mixT = 1
   }
 
   NumberAnimation { id: mixAnim; target: root; property: "mixT"; from: 0; to: 1; duration: 1400; easing.type: Easing.InOutQuad }
 
   FrameAnimation {
-    running: root.active
+    running: root.active && !root.paused
     onTriggered: {
-      root.t += frameTime * root.speed
+      // Rest & drift: 30 s still, 30 s moving, eased over 3 s at each change.
+      if (root.restDrift) {
+        root.restClock += frameTime
+        const ph = root.restClock % 60
+        root.pace = ph < 30 ? 0 : Math.min(1, (ph - 30) / 3) * Math.min(1, (60 - ph) / 3)
+      } else root.pace = 1
+      root.t += frameTime * root.speed * root.pace
       if (root.wander) root.wanderStep()
     }
   }
@@ -104,7 +127,8 @@ Item {
       const data = JSON.parse(raw)
       for (let i = 0; i < keys.length; i++) {
         const k = keys[i]
-        if (data[k] !== undefined && typeof data[k] === typeof root[k]) root[k] = data[k]
+        if (k === "generated") { if (Palettes.validGenerated(data[k])) root[k] = data[k] }
+        else if (data[k] !== undefined && typeof data[k] === typeof root[k]) root[k] = data[k]
       }
     } catch (e) {
       console.warn("drift: settings unreadable, using defaults")
@@ -126,6 +150,7 @@ Item {
   onSpeedChanged: touch()
   onGrainChanged: touch()
   onBlobsChanged: touch()
+  onRestDriftChanged: touch()
   onLoadedChanged: if (loaded) { syncStillLayer(); if (followWeather) fetchWeather(); retarget() }
 
   Component.onCompleted: mkdir.running = true
@@ -187,10 +212,12 @@ Item {
       const cur = root[key]
       if (typeof cur === "boolean") root[key] = value === "true"
       else if (typeof cur === "number") { const n = parseFloat(value); if (!isNaN(n)) root[key] = n }
-      else root[key] = value
+      else if (typeof cur === "string") root[key] = value
     }
     // Preview a weather code (WMO: 61 rain, 71 snow, 95 storm) until the next real report.
     function preview(code: string): void { root.weather = { name: "preview", temp: 5, code: parseInt(code), isDay: 1 } }
+    function generate(): void { root.generate() }
+    function shuffle(): void { root.shuffle() }
     function status(): string {
       const out = {}
       for (let i = 0; i < root.keys.length; i++) out[root.keys[i]] = root[root.keys[i]]
