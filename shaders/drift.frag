@@ -7,18 +7,23 @@ layout(std140, binding = 0) uniform buf {
   mat4 qt_Matrix;
   float qt_Opacity;
   vec4 c0; vec4 c1; vec4 c2; vec4 c3; vec4 c4; vec4 c5; vec4 c6; vec4 c7;
-  vec2 mouse;        // 0..1 over the screen
   float time;
   float aspect;      // width / height
   float blobs;       // 2..8
   float grain;       // 0..1
-  float interaction; // 0..1
   float brightness;  // follow the day, 1 = unchanged
   float warmth;      // -1 cool .. 1 warm
   float desat;       // 0..1, grey the colours (cloud, fog)
   float rain;        // 0..1
   float snow;        // 0..1
 };
+
+// Float-only hash of the pixel, 0..1 (no sin, no integer ops: it must compile on every backend).
+float pixelNoise(vec2 frag, float seed) {
+  vec3 p3 = fract(vec3(frag + seed * vec2(37.0, 91.0), frag.x) * 0.1031);
+  p3 += dot(p3, p3.yzx + 33.33);
+  return fract((p3.x + p3.y) * p3.z);
+}
 
 float hash21(vec2 p) {
   p = fract(p * vec2(123.34, 456.21));
@@ -72,7 +77,6 @@ float flakes(vec2 p, float amount, float t) {
 void main() {
   vec2 uv = qt_TexCoord0;
   vec2 p = vec2(uv.x * aspect, uv.y);
-  vec2 m = vec2(mouse.x * aspect, mouse.y);
 
   vec3 accum = vec3(0.0);
   float wsum = 0.0;
@@ -83,9 +87,6 @@ void main() {
     vec2 pos = vec2(0.5 + 0.46 * sin(time * 0.31 * (1.0 + 0.17 * fi) + fi * 2.1),
                     0.5 + 0.46 * cos(time * 0.27 * (1.0 + 0.13 * fi) + fi * 3.7));
     pos.x *= aspect;
-    vec2 away = pos - m;
-    float dm = dot(away, away);
-    pos += normalize(away + 1e-4) * interaction * 0.22 * exp(-dm * 5.0);
     float r = 0.36 + 0.09 * sin(time * 0.2 + fi * 1.3);
     vec2 d = p - pos;
     float w = exp(-dot(d, d) / (r * r));
@@ -104,6 +105,9 @@ void main() {
   col *= 1.0 - wet * 0.08 * (1.0 - step(0.3, wet));
   col += vec3(flakes(p, snow, time)) * 0.9;
 
-  col += (hash21(gl_FragCoord.xy) - 0.5) * grain * 0.1;
+  // Visible film grain, on the slider.
+  col += (pixelNoise(gl_FragCoord.xy, 0.0) - 0.5) * grain * 0.1;
+  // Always-on dither of one 8-bit step (triangular), so slow gradients do not band whatever the grain is.
+  col += (pixelNoise(gl_FragCoord.xy, 1.0) + pixelNoise(gl_FragCoord.xy, 2.0) - 1.0) / 255.0;
   fragColor = vec4(clamp(col, 0.0, 1.0), 1.0) * qt_Opacity;
 }
