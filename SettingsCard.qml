@@ -36,6 +36,17 @@ PanelWindow {
   WlrLayershell.layer: WlrLayer.Overlay
   WlrLayershell.keyboardFocus: WlrKeyboardFocus.OnDemand
 
+  function openLocationSearch() {
+    dropdown.visible = false
+    locPopup.y = locChip.mapToItem(card, 0, locChip.height).y + 6
+    locPopup.visible = !locPopup.visible
+    if (locPopup.visible) {
+      searchField.text = ""
+      win.drift.search("")
+      Qt.callLater(function() { searchField.forceActiveFocus() })
+    }
+  }
+
   component Separator: Rectangle { width: parent.width - 28; x: 14; height: 1; color: win.lineColor }
 
   component Heading: Text {
@@ -317,9 +328,11 @@ PanelWindow {
           checked: win.drift.followWeather
           onFlipped: function(v) { win.drift.followWeather = v }
           Chip {
+            id: locChip
             chipHeight: 26
-            visible: win.drift.followWeather && win.drift.weather !== null && win.drift.weather.name !== ""
-            label: win.drift.weather ? win.drift.weather.name.split(",")[0] : ""
+            visible: win.drift.followWeather
+            label: win.drift.weather && win.drift.weather.name ? win.drift.weather.name.split(",")[0] : (win.drift.location ? win.drift.location.name : "Locating…")
+            onClicked: win.openLocationSearch()
             // Location arrow.
             Shape {
               width: 11; height: 11
@@ -376,6 +389,72 @@ PanelWindow {
             ShapePath { strokeColor: win.textColor; strokeWidth: 1.5; fillColor: "transparent"; capStyle: ShapePath.RoundCap; joinStyle: ShapePath.RoundJoin
               startX: 11; startY: 8; PathLine { x: 14; y: 10 } PathLine { x: 11; y: 12 } }
           }
+        }
+      }
+    }
+  }
+
+  // City search for the weather location, opened from the location chip.
+  Rectangle {
+    id: locPopup
+    visible: false
+    z: 11
+    x: card.width - width - 14
+    width: 300; height: locCol.implicitHeight + 16; radius: 10
+    color: "#303030"; border.color: "#484848"
+    layer.enabled: true
+    layer.effect: MultiEffect { shadowEnabled: true; shadowColor: "#90000000"; shadowBlur: 0.6; shadowVerticalOffset: 4 }
+    Column {
+      id: locCol
+      anchors { left: parent.left; right: parent.right; top: parent.top; margins: 8 }
+      spacing: 4
+      Rectangle {
+        width: parent.width; height: 32; radius: 8; color: "#262626"
+        border.color: searchField.activeFocus ? win.accent : "#444444"
+        Text {
+          visible: searchField.text === ""
+          x: 10; anchors.verticalCenter: parent.verticalCenter
+          text: "Search for a city"; color: win.dimColor; font.pixelSize: 13; textFormat: Text.PlainText
+        }
+        TextInput {
+          id: searchField
+          anchors { fill: parent; leftMargin: 10; rightMargin: 10 }
+          verticalAlignment: TextInput.AlignVCenter
+          color: win.textColor; font.pixelSize: 13; clip: true; selectByMouse: true
+          onTextChanged: win.drift.search(text)
+          Keys.onEscapePressed: locPopup.visible = false
+        }
+      }
+      Repeater {
+        model: win.drift.places
+        Rectangle {
+          id: place
+          required property var modelData
+          width: locCol.width; height: 40; radius: 6
+          color: placeMouse.containsMouse ? win.accent : "transparent"
+          Column {
+            anchors { left: parent.left; leftMargin: 8; right: parent.right; rightMargin: 8; verticalCenter: parent.verticalCenter }
+            Text { width: parent.width; elide: Text.ElideRight; text: place.modelData.name; color: win.textColor; font.pixelSize: 13; textFormat: Text.PlainText }
+            Text { width: parent.width; elide: Text.ElideRight; text: place.modelData.region; color: placeMouse.containsMouse ? "#d8e6ff" : win.dimColor; font.pixelSize: 11; textFormat: Text.PlainText }
+          }
+          MouseArea {
+            id: placeMouse; anchors.fill: parent; hoverEnabled: true
+            onClicked: { win.drift.chooseLocation(place.modelData); locPopup.visible = false }
+          }
+        }
+      }
+      Text {
+        visible: win.drift.placeQuery.length >= 2 && !win.drift.searching && win.drift.places.length === 0
+        text: "No matches"; color: win.dimColor; font.pixelSize: 12; leftPadding: 8; topPadding: 4; bottomPadding: 4; textFormat: Text.PlainText
+      }
+      Rectangle {
+        visible: win.drift.location !== null
+        width: parent.width; height: 30; radius: 6
+        color: autoMouse.containsMouse ? win.accent : "transparent"
+        Text { x: 8; anchors.verticalCenter: parent.verticalCenter; text: "Use Omarchy's location"; color: win.textColor; font.pixelSize: 13; textFormat: Text.PlainText }
+        MouseArea {
+          id: autoMouse; anchors.fill: parent; hoverEnabled: true
+          onClicked: { win.drift.useOmarchyLocation(); locPopup.visible = false }
         }
       }
     }

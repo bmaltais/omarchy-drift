@@ -25,7 +25,8 @@ Item {
   property bool restDrift: false
   property var generated: []
   property bool showTime: false
-  readonly property var keys: ["lit", "atmosphere", "wander", "followDay", "followWeather", "speed", "grain", "blobs", "restDrift", "generated", "showTime"]
+  property var location: null   // { name, latitude, longitude }; null = use Omarchy's weather location
+  readonly property var keys: ["lit", "atmosphere", "wander", "followDay", "followWeather", "speed", "grain", "blobs", "restDrift", "generated", "showTime", "location"]
 
   property bool loaded: false
   property bool cardOpen: false
@@ -141,6 +142,10 @@ Item {
       for (let i = 0; i < keys.length; i++) {
         const k = keys[i]
         if (k === "generated") { if (Palettes.validGenerated(data[k])) root[k] = data[k] }
+        else if (k === "location") {
+          const l = data[k]
+          if (l && typeof l.name === "string" && isFinite(l.latitude) && isFinite(l.longitude)) root.location = { name: l.name, latitude: Number(l.latitude), longitude: Number(l.longitude) }
+        }
         else if (data[k] !== undefined && typeof data[k] === typeof root[k]) root[k] = data[k]
       }
     } catch (e) {
@@ -165,6 +170,11 @@ Item {
   onBlobsChanged: touch()
   onRestDriftChanged: touch()
   onShowTimeChanged: touch()
+  onLocationChanged: {
+    touch()
+    weather = null
+    refetchWeather()
+  }
   onLoadedChanged: if (loaded) { syncStillLayer(); if (followWeather) fetchWeather(); retarget() }
 
   Component.onCompleted: mkdir.running = true
@@ -187,11 +197,15 @@ Item {
 
   // --- weather: the location Omarchy's weather panel uses, else its IP lookup; Open-Meteo for the report ---
   readonly property string weatherScript: [
-    'loc="$HOME/.local/state/omarchy/settings/weather.json"',
     'num="^-?[0-9]+(\\.[0-9]+)?$"',
-    'read -r lat lon name < <(jq -r \'select(.latitude != null and .longitude != null) | "\\(.latitude) \\(.longitude) \\(.name // "")"\' "$loc" 2>/dev/null)',
-    'if ! [[ $lat =~ $num && $lon =~ $num ]]; then',
-    '  read -r lat lon name < <(curl -fsS --max-time 5 https://geo.omarchy.org/ | jq -r \'"\\(.latitude) \\(.longitude) \\(.name // "")"\')',
+    'if [[ -n ${1:-} ]]; then',
+    '  lat=$1; lon=$2; name=${3:-}',
+    'else',
+    '  loc="$HOME/.local/state/omarchy/settings/weather.json"',
+    '  read -r lat lon name < <(jq -r \'select(.latitude != null and .longitude != null) | "\\(.latitude) \\(.longitude) \\(.name // "")"\' "$loc" 2>/dev/null)',
+    '  if ! [[ $lat =~ $num && $lon =~ $num ]]; then',
+    '    read -r lat lon name < <(curl -fsS --max-time 5 https://geo.omarchy.org/ | jq -r \'"\\(.latitude) \\(.longitude) \\(.name // "")"\')',
+    '  fi',
     'fi',
     '[[ $lat =~ $num && $lon =~ $num ]] || exit 1',
     'curl -fsS --max-time 10 "https://api.open-meteo.com/v1/forecast?latitude=$lat&longitude=$lon&current=temperature_2m,weather_code,is_day,wind_speed_10m,wind_direction_10m&timezone=auto" |',
@@ -200,7 +214,6 @@ Item {
 
   Process {
     id: weatherProc
-    command: ["bash", "-c", root.weatherScript]
     stdout: StdioCollector {
       onStreamFinished: {
         try {
@@ -210,7 +223,56 @@ Item {
       }
     }
   }
-  function fetchWeather() { if (!weatherProc.running) weatherProc.running = true }
+  // The command is built here, not bound: a change handler runs before bindings re-evaluate, and would fetch the old place.
+  function fetchWeather() {
+    if (weatherProc.running) return
+    weatherProc.command = location
+      ? ["bash", "-c", weatherScript, "drift", String(location.latitude), String(location.longitude), location.name]
+      : ["bash", "-c", weatherScript]
+    weatherProc.running = true
+  }
+  // A new location while a fetch runs: stop it and start again from a clean state.
+  function refetchWeather() {
+    if (!followWeather) return
+    if (weatherProc.running) { weatherProc.running = false; Qt.callLater(fetchWeather) }
+    else fetchWeather()
+  }
+
+  // --- city search (Open-Meteo geocoding): only the typed text leaves the machine ---
+  property var places: []
+  property string placeQuery: ""
+  property bool searching: false
+  property bool searchAgain: false
+  function search(q) {
+    placeQuery = String(q).trim()
+    if (placeQuery.length < 2) { places = []; searching = false; return }
+    searching = true
+    placeTimer.restart()
+  }
+  function runSearch() {
+    if (geoProc.running) { searchAgain = true; return }
+    geoProc.command = ["curl", "-fsS", "--max-time", "6", "-G", "https://geocoding-api.open-meteo.com/v1/search",
+      "--data-urlencode", "name=" + placeQuery, "--data-urlencode", "count=6", "--data-urlencode", "language=en"]
+    geoProc.running = true
+  }
+  function chooseLocation(place) { location = { name: place.name, latitude: place.latitude, longitude: place.longitude } }
+  function useOmarchyLocation() { location = null }
+  Timer { id: placeTimer; interval: 350; onTriggered: root.runSearch() }
+  Process {
+    id: geoProc
+    stdout: StdioCollector {
+      onStreamFinished: {
+        try {
+          const found = JSON.parse(text).results || []
+          root.places = found.filter(function(r) { return r.name && isFinite(r.latitude) && isFinite(r.longitude) }).map(function(r) {
+            return { name: String(r.name), region: [r.admin1, r.country].filter(function(x) { return !!x }).join(", "), latitude: Number(r.latitude), longitude: Number(r.longitude) }
+          })
+        } catch (e) { root.places = [] }
+        root.searching = false
+      }
+    }
+    onExited: if (root.searchAgain) { root.searchAgain = false; root.runSearch() }
+  }
   Timer { interval: 900000; running: root.active && root.followWeather; repeat: true; onTriggered: root.fetchWeather() }
 
   // --- IPC ---
@@ -234,6 +296,10 @@ Item {
     function shuffle(): void { root.shuffle() }
     // Preview a local hour (21.9 = 21:54) until the next 20 s clock tick.
     function previewHour(h: string): void { const n = parseFloat(h); if (!isNaN(n)) root.hour = n }
+    function setLocation(name: string, lat: string, lon: string): void {
+      if (isFinite(parseFloat(lat)) && isFinite(parseFloat(lon))) root.location = { name: name, latitude: parseFloat(lat), longitude: parseFloat(lon) }
+    }
+    function clearLocation(): void { root.useOmarchyLocation() }
     function status(): string {
       const out = {}
       for (let i = 0; i < root.keys.length; i++) out[root.keys[i]] = root[root.keys[i]]
