@@ -13,15 +13,19 @@ on the background layer of every screen.
 - **Atmospheres** (a dropdown, plus Generate for a random new one and a shuffle button): Ember, Iris, Lagoon, Dusk, Aurora, Sage, Mono, and Weather (colours chosen by the sky). Or wander through them all.
 - **Follow the day**: the palette is pulled toward the sky's colours for the local hour (indigo night, orange and magenta at dawn and dusk, blue, pink and orange at midday). Optional "Show the time" adds a small clock caption bottom left (`preview-hour` via `previewHour` for testing).
 - **Follow the weather**: Open-Meteo for the location of Omarchy's weather panel (`omarchy-weather-location`, else its IP lookup at geo.omarchy.org). Click the city chip to search for another place (Open-Meteo geocoding; only the typed text is sent); it is saved in Drift's own settings and does not change Omarchy's location. "Current location" (always listed first) goes back to automatic. Cloud greys the colours, rain beads on the glass, snow falls, a storm darkens, and wind (speed and direction) swirls the colours.
-- **Bar icon** (a droplet): left-click opens the settings card under the pointer (one `hyprctl cursorpos` lookup at click time; centred on it, kept on the screen), right-click turns Drift on or off. Add `{ "id": "io.github.bmaltais.drift" }` to a bar section in `shell.json`.
+- **Bar icon** (a droplet): left-click opens the settings card under the pointer (one `hyprctl cursorpos` lookup at click time; centred on it, kept on the screen), right-click turns Drift on or off.
 - **Speed, grain, blob count** sliders, and Rest & drift (30 s still, 30 s moving). The card follows the Mac app: live preview header, pause, shuffle. (Pointer interaction is left out for now; the shader still has the input.)
 
 ## Install
 
 ```sh
-git clone https://github.com/bmaltais/omarchy-drift ~/.config/omarchy/plugins/io.github.bmaltais.drift
+omarchy plugin add https://github.com/bmaltais/omarchy-drift --enable
 ```
-Add `{ "id": "io.github.bmaltais.drift" }` to the top-level `plugins` list of `~/.config/omarchy/shell.json`, then restart the shell.
+Omarchy asks which bar section the Drift icon (a droplet) should go in, and loads the plugin straight away: no shell restart. Drift starts **off**, so your wallpaper does not change until you turn it on (click the icon, or `omarchy-shell io.github.bmaltais.drift on`).
+
+Update with `omarchy plugin update io.github.bmaltais.drift`, remove with `omarchy plugin remove io.github.bmaltais.drift`. It needs `curl` and `jq` (for the weather) and, for the panel to open under the pointer, Hyprland's `hyprctl`; everything else comes with Omarchy.
+
+Without the `omarchy plugin` commands: `git clone https://github.com/bmaltais/omarchy-drift ~/.config/omarchy/plugins/io.github.bmaltais.drift`, then `omarchy-shell shell rescanPlugins` and `omarchy plugin enable io.github.bmaltais.drift right`.
 
 ## Use
 
