@@ -12,6 +12,7 @@ BarWidget.qml	unresolved-type	Type BarWidget is used but it is not resolved
 BarWidget.qml	unresolved-type	Type anchors is used but it is not resolved
 DriftLayer.qml	uncreatable-type	Type PanelWindow is not creatable.
 SettingsCard.qml	uncreatable-type	Type PanelWindow is not creatable.
+SettingsCard.qml	unqualified	headerMask
 SettingsCard.qml	unqualified	margins
 SettingsCard.qml	unqualified	n.a
 SettingsCard.qml	unqualified	n.d

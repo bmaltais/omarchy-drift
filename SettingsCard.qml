@@ -10,31 +10,36 @@ PanelWindow {
   id: win
   required property var drift
 
-  readonly property color cardColor: "#1f1f1f"
-  readonly property color rowColor: "#2a2a2a"
-  readonly property color lineColor: "#383838"
-  readonly property color chipColor: "#383838"
-  readonly property color textColor: "#f0f0f0"
-  readonly property color dimColor: "#8e8e8e"
-  readonly property color accent: "#2f80ff"
-  readonly property int headerHeight: 150
+  readonly property color cardColor: "#1c1c1c"
+  readonly property color rowColor: "#272727"
+  readonly property color lineColor: "#363636"
+  readonly property color chipColor: "#363636"
+  readonly property color textColor: "#f2f2f2"
+  readonly property color dimColor: "#8a8a8a"
+  readonly property color accent: "#1a7bff"
+  readonly property int headerHeight: 140
   readonly property var atmosphereNames: win.drift.generated.length === 8 ? Palettes.names.concat(["Generated"]) : Palettes.names
 
   visible: win.drift.cardOpen
   color: "transparent"
   exclusionMode: ExclusionMode.Ignore
-  implicitWidth: 360
-  implicitHeight: content.implicitHeight
+  // The window is larger than the card by `pad` on every side: room for the drop shadow.
+  readonly property int pad: 28
+  readonly property int cardWidth: 372
+  implicitWidth: cardWidth + 2 * pad
+  implicitHeight: content.implicitHeight + 2 * pad
   anchors { top: true; right: true }
-  margins { top: 60; right: 24 }
+  margins { top: 60 - pad; right: 24 - pad }
+  // Only the card takes pointer input; the shadow margin lets clicks through.
+  mask: Region { item: card }
   WlrLayershell.namespace: "omarchy-drift-settings"
   WlrLayershell.layer: WlrLayer.Overlay
   WlrLayershell.keyboardFocus: WlrKeyboardFocus.OnDemand
 
-  component Separator: Rectangle { width: parent.width - 24; x: 12; height: 1; color: win.lineColor }
+  component Separator: Rectangle { width: parent.width - 28; x: 14; height: 1; color: win.lineColor }
 
   component Heading: Text {
-    color: win.textColor; font.pixelSize: 12; font.bold: true; leftPadding: 6; topPadding: 10; bottomPadding: 2
+    color: win.textColor; font.pixelSize: 13; font.bold: true; leftPadding: 8; topPadding: 22; bottomPadding: 6
     textFormat: Text.PlainText
   }
 
@@ -44,44 +49,32 @@ PanelWindow {
     Column { id: col; width: parent.width }
   }
 
+  // A small rounded button: icon text and/or label.
   component Chip: Rectangle {
     id: chip
     property string label
     property alias glyph: glyphText.text
+    property int chipHeight: 28
+    default property alias custom: customRow.data
     signal clicked()
-    height: 26; width: row.implicitWidth + 20; radius: 7; color: win.chipColor
+    height: chipHeight; width: row.implicitWidth + 22; radius: 8; color: chipMouse.containsMouse ? "#424242" : win.chipColor
     Row {
-      id: row; anchors.centerIn: parent; spacing: 6
+      id: row; anchors.centerIn: parent; spacing: 7
+      Row { id: customRow; anchors.verticalCenter: parent.verticalCenter }
       Text { id: glyphText; visible: text !== ""; color: win.textColor; font.pixelSize: 12; anchors.verticalCenter: parent.verticalCenter; textFormat: Text.PlainText }
-      Text { visible: chip.label !== ""; text: chip.label; color: win.textColor; font.pixelSize: 12; anchors.verticalCenter: parent.verticalCenter; textFormat: Text.PlainText }
+      Text { visible: chip.label !== ""; text: chip.label; color: win.textColor; font.pixelSize: 13; font.weight: Font.Medium; anchors.verticalCenter: parent.verticalCenter; textFormat: Text.PlainText }
     }
-    MouseArea { anchors.fill: parent; onClicked: chip.clicked() }
+    MouseArea { id: chipMouse; anchors.fill: parent; hoverEnabled: true; onClicked: chip.clicked() }
   }
 
-  // Pause / play, drawn (the font's pause glyph comes out as a boxed emoji).
-  component PlayPause: Rectangle {
-    id: pp
-    property bool paused: false
+  // Footer pill: fully rounded, with a drawn icon (font glyphs for these come out as emoji).
+  component Pill: Rectangle {
+    id: pill
+    default property alias icon: slot.data
     signal clicked()
-    height: 26; width: 44; radius: 7; color: win.chipColor
-    Row {
-      visible: !pp.paused
-      anchors.centerIn: parent; spacing: 3
-      Rectangle { width: 3; height: 10; radius: 1; color: win.textColor }
-      Rectangle { width: 3; height: 10; radius: 1; color: win.textColor }
-    }
-    Shape {
-      visible: pp.paused
-      anchors.centerIn: parent; width: 9; height: 10
-      ShapePath {
-        fillColor: win.textColor; strokeColor: "transparent"
-        startX: 0; startY: 0
-        PathLine { x: 9; y: 5 }
-        PathLine { x: 0; y: 10 }
-        PathLine { x: 0; y: 0 }
-      }
-    }
-    MouseArea { anchors.fill: parent; onClicked: pp.clicked() }
+    height: 28; width: 58; radius: 14; color: pillMouse.containsMouse ? "#424242" : win.chipColor
+    Item { id: slot; anchors.centerIn: parent; width: 14; height: 14 }
+    MouseArea { id: pillMouse; anchors.fill: parent; hoverEnabled: true; onClicked: pill.clicked() }
   }
 
   component Toggle: Item {
@@ -92,25 +85,39 @@ PanelWindow {
     default property alias trailing: extra.data
     signal flipped(bool value)
     width: parent.width
-    height: hint ? 52 : 40
+    height: hint ? 56 : 42
     Column {
-      anchors { left: parent.left; leftMargin: 12; verticalCenter: parent.verticalCenter }
+      anchors { left: parent.left; leftMargin: 14; verticalCenter: parent.verticalCenter }
       spacing: 2
-      Text { text: tg.label; color: win.textColor; font.pixelSize: 13; textFormat: Text.PlainText }
+      Text { text: tg.label; color: win.textColor; font.pixelSize: 14; textFormat: Text.PlainText }
       Text { visible: tg.hint !== ""; text: tg.hint; color: win.dimColor; font.pixelSize: 11; textFormat: Text.PlainText }
     }
     Row {
-      anchors { right: parent.right; rightMargin: 12; verticalCenter: parent.verticalCenter }
+      anchors { right: parent.right; rightMargin: 14; verticalCenter: parent.verticalCenter }
       spacing: 10
       Row { id: extra; anchors.verticalCenter: parent.verticalCenter }
+      // macOS switch: blue when on, light grey when off, white knob.
       Rectangle {
         anchors.verticalCenter: parent.verticalCenter
-        width: 40; height: 22; radius: 11
-        color: tg.checked ? win.accent : "#555"
-        Rectangle { x: tg.checked ? 20 : 2; y: 2; width: 18; height: 18; radius: 9; color: "white"; Behavior on x { NumberAnimation { duration: 120 } } }
+        width: 38; height: 22; radius: 11
+        color: tg.checked ? win.accent : "#d6d6d6"
+        Behavior on color { ColorAnimation { duration: 120 } }
+        Rectangle {
+          x: tg.checked ? 17 : 2; y: 2; width: 18; height: 18; radius: 9; color: "white"
+          border.color: tg.checked ? "transparent" : "#c4c4c4"
+          Behavior on x { NumberAnimation { duration: 120; easing.type: Easing.OutQuad } }
+        }
         MouseArea { anchors.fill: parent; onClicked: tg.flipped(!tg.checked) }
       }
     }
+  }
+
+  // The slow / fast animals, greyed so they read as silhouettes.
+  component Animal: Text {
+    width: 26; height: 22; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter
+    font.pixelSize: 20; textFormat: Text.PlainText
+    layer.enabled: true
+    layer.effect: MultiEffect { saturation: -1.0; brightness: 0.1; contrast: -0.15 }
   }
 
   component SliderRow: Item {
@@ -126,36 +133,38 @@ PanelWindow {
     property string rightGlyph: ""
     signal moved(real value)
     width: parent.width
-    height: 40
+    height: 42
     Text {
-      anchors { left: parent.left; leftMargin: 12; verticalCenter: parent.verticalCenter }
-      text: sl.label; color: win.textColor; font.pixelSize: 13; textFormat: Text.PlainText
+      anchors { left: parent.left; leftMargin: 14; verticalCenter: parent.verticalCenter }
+      text: sl.label; color: win.textColor; font.pixelSize: 14; textFormat: Text.PlainText
     }
     Row {
-      anchors { right: parent.right; rightMargin: 12; verticalCenter: parent.verticalCenter }
+      anchors { right: parent.right; rightMargin: 14; verticalCenter: parent.verticalCenter }
       spacing: 8
-      Text { text: sl.leftGlyph; width: 16; color: win.dimColor; font.pixelSize: 13; anchors.verticalCenter: parent.verticalCenter; textFormat: Text.PlainText }
+      Animal { visible: sl.leftGlyph !== ""; text: sl.leftGlyph; anchors.verticalCenter: parent.verticalCenter }
       Item {
         id: track
-        width: 150; height: 20; anchors.verticalCenter: parent.verticalCenter
-        Rectangle { anchors.verticalCenter: parent.verticalCenter; width: parent.width; height: 4; radius: 2; color: "#555" }
+        width: 158; height: 22; anchors.verticalCenter: parent.verticalCenter
+        Rectangle { anchors.verticalCenter: parent.verticalCenter; width: parent.width; height: 4; radius: 2; color: "#474747" }
         Repeater {
           model: sl.ticks
           Rectangle {
             required property int index
-            x: 8 + (track.width - 16) * index / Math.max(1, sl.ticks - 1) - 1
-            y: 15; width: 2; height: 2; color: win.dimColor
+            x: 9 + (track.width - 18) * index / Math.max(1, sl.ticks - 1) - 1
+            y: 18; width: 2; height: 2; radius: 1; color: "#6a6a6a"
           }
         }
         Rectangle {
           id: handle
-          y: 2; width: 16; height: 16; radius: 8; color: "white"
+          y: 2; width: 18; height: 18; radius: 9; color: "white"
           x: (track.width - width) * (sl.value - sl.from) / (sl.to - sl.from)
+          layer.enabled: true
+          layer.effect: MultiEffect { shadowEnabled: true; shadowColor: "#80000000"; shadowBlur: 0.5; shadowVerticalOffset: 1 }
         }
         MouseArea {
           anchors.fill: parent
           function pick(mx) {
-            const f = Math.max(0, Math.min(1, (mx - 8) / (track.width - 16)))
+            const f = Math.max(0, Math.min(1, (mx - 9) / (track.width - 18)))
             const v = sl.from + f * (sl.to - sl.from)
             sl.moved(sl.integer ? Math.round(v) : v)
           }
@@ -163,16 +172,24 @@ PanelWindow {
           onPositionChanged: function(e) { if (pressed) pick(e.x) }
         }
       }
-      Text { text: sl.rightGlyph; width: 16; color: win.dimColor; font.pixelSize: 13; anchors.verticalCenter: parent.verticalCenter; textFormat: Text.PlainText }
-      Text { text: sl.showValue ? Math.round(sl.value) : ""; color: win.dimColor; font.pixelSize: 12; width: 12; anchors.verticalCenter: parent.verticalCenter; textFormat: Text.PlainText }
+      Animal { visible: sl.rightGlyph !== ""; text: sl.rightGlyph; anchors.verticalCenter: parent.verticalCenter }
+      Text { visible: sl.showValue; text: Math.round(sl.value); color: win.dimColor; font.pixelSize: 13; width: 20; horizontalAlignment: Text.AlignRight; anchors.verticalCenter: parent.verticalCenter; textFormat: Text.PlainText }
     }
   }
 
+  Item {
+    id: card
+    x: win.pad; y: win.pad
+    width: win.cardWidth; height: content.implicitHeight
+
+  // The window: dark body, hairline border, soft drop shadow.
   Rectangle {
     anchors.fill: parent
     radius: 14
     color: win.cardColor
-    border.color: "#383838"
+    border.color: "#3a3a3a"
+    layer.enabled: true
+    layer.effect: MultiEffect { shadowEnabled: true; shadowColor: "#c0000000"; shadowBlur: 1.0; shadowVerticalOffset: 10; shadowScale: 1.0 }
   }
 
   Item { anchors.fill: parent; focus: true; Keys.onEscapePressed: win.drift.cardOpen = false }
@@ -181,73 +198,93 @@ PanelWindow {
     id: content
     width: parent.width
 
-    // Header: the live gradient, fading into the card.
+    // Header: the live gradient with a hard lower edge, only the top corners rounded.
     Item {
       width: parent.width; height: win.headerHeight
-      // The preview, masked to the card's rounded top corners (a plain clip would leave them square).
       Item {
         anchors.fill: parent
         layer.enabled: true
         layer.effect: MultiEffect { maskEnabled: true; maskSource: headerMask }
         DriftView { anchors.fill: parent; drift: win.drift }
       }
-      Rectangle { id: headerMask; anchors.fill: parent; radius: 14; visible: false; layer.enabled: true }
-      Rectangle {
-        anchors { left: parent.left; right: parent.right; bottom: parent.bottom }
-        height: 90
-        gradient: Gradient {
-          GradientStop { position: 0; color: "transparent" }
-          GradientStop { position: 1; color: win.cardColor }
+      Item {
+        id: headerMask
+        anchors.fill: parent; visible: false; layer.enabled: true
+        Rectangle { anchors.fill: parent; radius: 14 }
+        Rectangle {
+          anchors { left: parent.left; right: parent.right; bottom: parent.bottom }
+          height: parent.height / 2
         }
       }
       Rectangle {
-        x: 14; y: 14; width: 12; height: 12; radius: 6; color: "#ff5f57"
-        MouseArea { anchors.fill: parent; anchors.margins: -4; onClicked: win.drift.cardOpen = false }
+        anchors { left: parent.left; right: parent.right; bottom: parent.bottom }
+        height: 70
+        gradient: Gradient {
+          GradientStop { position: 0; color: "transparent" }
+          GradientStop { position: 1; color: "#8c000000" }
+        }
+      }
+      Row {
+        x: 12; y: 12; spacing: 8
+        Rectangle { width: 12; height: 12; radius: 6; color: "#ff5f57"; MouseArea { anchors.fill: parent; anchors.margins: -3; onClicked: win.drift.cardOpen = false } }
+        Rectangle { width: 12; height: 12; radius: 6; color: "#febc2e" }
+        Rectangle { width: 12; height: 12; radius: 6; color: "#28c840" }
       }
       Rectangle {
-        anchors { right: parent.right; rightMargin: 14; top: parent.top; topMargin: 12 }
-        height: 22; width: pill.implicitWidth + 22; radius: 11; color: "#66000000"
+        anchors { right: parent.right; rightMargin: 14; top: parent.top; topMargin: 10 }
+        height: 22; width: pillRow.implicitWidth + 22; radius: 11; color: "#70000000"
         Row {
-          id: pill; anchors.centerIn: parent; spacing: 6
+          id: pillRow; anchors.centerIn: parent; spacing: 6
           Rectangle { width: 6; height: 6; radius: 3; anchors.verticalCenter: parent.verticalCenter; color: win.drift.paused || !win.drift.lit ? win.dimColor : "#5ee06a" }
           Text {
             text: !win.drift.lit ? "Off" : win.drift.paused ? "Paused" : win.drift.restDrift && win.drift.pace < 0.05 ? "Resting" : "Evolving"
-            color: win.textColor; font.pixelSize: 11; textFormat: Text.PlainText
+            color: win.textColor; font.pixelSize: 11; font.weight: Font.DemiBold; textFormat: Text.PlainText
           }
         }
         MouseArea { anchors.fill: parent; onClicked: win.drift.lit = !win.drift.lit }
       }
       Column {
-        anchors { left: parent.left; leftMargin: 18; bottom: parent.bottom; bottomMargin: 6 }
-        Text { text: "Drift"; color: "white"; font.pixelSize: 28; font.family: "serif"; textFormat: Text.PlainText }
-        Text { text: "A quiet world, always becoming."; color: "#d0d0d0"; font.pixelSize: 11; textFormat: Text.PlainText }
+        anchors { left: parent.left; leftMargin: 20; bottom: parent.bottom; bottomMargin: 14 }
+        spacing: 2
+        Text { text: "Drift"; color: "white"; font.pixelSize: 30; font.family: "Noto Serif"; textFormat: Text.PlainText }
+        Text { text: "A quiet world, always becoming."; color: "#e0e0e0"; font.pixelSize: 12; textFormat: Text.PlainText }
       }
     }
 
     Column {
-      x: 16; width: parent.width - 32
-      bottomPadding: 14
+      x: 14; width: parent.width - 28
+      bottomPadding: 18
 
-      Heading { text: "Colour" }
+      Heading { text: "Colour"; topPadding: 16 }
       Group {
         Item {
-          width: parent.width; height: 44
+          width: parent.width; height: 46
           Text {
-            anchors { left: parent.left; leftMargin: 12; verticalCenter: parent.verticalCenter }
-            text: "Atmosphere"; color: win.textColor; font.pixelSize: 13; textFormat: Text.PlainText
+            anchors { left: parent.left; leftMargin: 14; verticalCenter: parent.verticalCenter }
+            text: "Atmosphere"; color: win.textColor; font.pixelSize: 14; textFormat: Text.PlainText
           }
           Row {
-            anchors { right: parent.right; rightMargin: 10; verticalCenter: parent.verticalCenter }
+            anchors { right: parent.right; rightMargin: 12; verticalCenter: parent.verticalCenter }
             spacing: 8
             Rectangle {
               id: dropButton
-              height: 26; width: dropRow.implicitWidth + 18; radius: 7; color: dropMouse.containsMouse || dropdown.visible ? win.lineColor : "transparent"
+              height: 28; width: dropRow.implicitWidth + 12; radius: 8; color: "transparent"
               Row {
                 id: dropRow; anchors.centerIn: parent; spacing: 8
-                Text { text: win.drift.wander ? "Wandering" : win.drift.atmosphere; color: win.textColor; font.pixelSize: 13; textFormat: Text.PlainText }
-                Text { text: "⌃\n⌄"; color: win.dimColor; font.pixelSize: 8; lineHeight: 0.55; anchors.verticalCenter: parent.verticalCenter; textFormat: Text.PlainText }
+                Text { text: win.drift.wander ? "Wandering" : win.drift.atmosphere; color: win.textColor; font.pixelSize: 14; anchors.verticalCenter: parent.verticalCenter; textFormat: Text.PlainText }
+                // macOS pop-up stepper: a small rounded box with up/down chevrons.
+                Rectangle {
+                  width: 20; height: 24; radius: 6; anchors.verticalCenter: parent.verticalCenter; color: win.chipColor
+                  Shape {
+                    anchors.centerIn: parent; width: 8; height: 12
+                    ShapePath { strokeColor: win.textColor; strokeWidth: 1.4; fillColor: "transparent"; capStyle: ShapePath.RoundCap; joinStyle: ShapePath.RoundJoin
+                      startX: 0.5; startY: 4; PathLine { x: 4; y: 0.8 } PathLine { x: 7.5; y: 4 } }
+                    ShapePath { strokeColor: win.textColor; strokeWidth: 1.4; fillColor: "transparent"; capStyle: ShapePath.RoundCap; joinStyle: ShapePath.RoundJoin
+                      startX: 0.5; startY: 8; PathLine { x: 4; y: 11.2 } PathLine { x: 7.5; y: 8 } }
+                  }
+                }
               }
-              MouseArea { id: dropMouse; anchors.fill: parent; hoverEnabled: true; onClicked: dropdown.visible = !dropdown.visible }
+              MouseArea { anchors.fill: parent; onClicked: dropdown.visible = !dropdown.visible }
             }
             Chip { label: "Generate"; glyph: "✦"; onClicked: { dropdown.visible = false; win.drift.generate() } }
           }
@@ -263,8 +300,15 @@ PanelWindow {
           checked: win.drift.followWeather
           onFlipped: function(v) { win.drift.followWeather = v }
           Chip {
+            chipHeight: 26
             visible: win.drift.followWeather && win.drift.weather !== null && win.drift.weather.name !== ""
-            glyph: "➤"; label: win.drift.weather ? win.drift.weather.name.split(",")[0] : ""
+            label: win.drift.weather ? win.drift.weather.name.split(",")[0] : ""
+            // Location arrow.
+            Shape {
+              width: 11; height: 11
+              ShapePath { strokeColor: "transparent"; fillColor: win.textColor
+                startX: 10.5; startY: 0.5; PathLine { x: 7; y: 10.5 } PathLine { x: 5; y: 6 } PathLine { x: 0.5; y: 4 } PathLine { x: 10.5; y: 0.5 } }
+            }
           }
         }
       }
@@ -286,12 +330,36 @@ PanelWindow {
 
     Rectangle { width: parent.width; height: 1; color: win.lineColor }
     Item {
-      width: parent.width; height: 50
+      width: parent.width; height: 52
       Row {
-        anchors { left: parent.left; leftMargin: 16; verticalCenter: parent.verticalCenter }
+        anchors { left: parent.left; leftMargin: 18; verticalCenter: parent.verticalCenter }
         spacing: 8
-        PlayPause { paused: win.drift.paused; onClicked: win.drift.paused = !win.drift.paused }
-        Chip { glyph: "⤮"; onClicked: win.drift.shuffle() }
+        Pill {
+          onClicked: win.drift.paused = !win.drift.paused
+          Row {
+            visible: !win.drift.paused; anchors.centerIn: parent; spacing: 3
+            Rectangle { width: 3.5; height: 12; radius: 1; color: win.textColor }
+            Rectangle { width: 3.5; height: 12; radius: 1; color: win.textColor }
+          }
+          Shape {
+            visible: win.drift.paused; anchors.centerIn: parent; width: 10; height: 12
+            ShapePath { fillColor: win.textColor; strokeColor: "transparent"; startX: 0; startY: 0; PathLine { x: 10; y: 6 } PathLine { x: 0; y: 12 } PathLine { x: 0; y: 0 } }
+          }
+        }
+        Pill {
+          onClicked: win.drift.shuffle()
+          Shape {
+            anchors.centerIn: parent; width: 16; height: 12
+            ShapePath { strokeColor: win.textColor; strokeWidth: 1.5; fillColor: "transparent"; capStyle: ShapePath.RoundCap; joinStyle: ShapePath.RoundJoin
+              startX: 0; startY: 2; PathCubic { control1X: 6; control1Y: 2; control2X: 7; control2Y: 10; x: 13; y: 10 } }
+            ShapePath { strokeColor: win.textColor; strokeWidth: 1.5; fillColor: "transparent"; capStyle: ShapePath.RoundCap; joinStyle: ShapePath.RoundJoin
+              startX: 0; startY: 10; PathCubic { control1X: 6; control1Y: 10; control2X: 7; control2Y: 2; x: 13; y: 2 } }
+            ShapePath { strokeColor: win.textColor; strokeWidth: 1.5; fillColor: "transparent"; capStyle: ShapePath.RoundCap; joinStyle: ShapePath.RoundJoin
+              startX: 11; startY: 0; PathLine { x: 14; y: 2 } PathLine { x: 11; y: 4 } }
+            ShapePath { strokeColor: win.textColor; strokeWidth: 1.5; fillColor: "transparent"; capStyle: ShapePath.RoundCap; joinStyle: ShapePath.RoundJoin
+              startX: 11; startY: 8; PathLine { x: 14; y: 10 } PathLine { x: 11; y: 12 } }
+          }
+        }
       }
     }
   }
@@ -301,10 +369,12 @@ PanelWindow {
     id: dropdown
     visible: false
     z: 10
-    x: win.width - width - 24
-    y: win.headerHeight + 62
-    width: 150; height: list.implicitHeight + 12; radius: 9
-    color: "#2f2f2f"; border.color: "#454545"
+    x: win.width - width - 26
+    y: win.headerHeight + 58
+    width: 156; height: list.implicitHeight + 12; radius: 10
+    color: "#303030"; border.color: "#484848"
+    layer.enabled: true
+    layer.effect: MultiEffect { shadowEnabled: true; shadowColor: "#90000000"; shadowBlur: 0.6; shadowVerticalOffset: 4 }
     Column {
       id: list
       anchors { left: parent.left; right: parent.right; top: parent.top; margins: 6 }
@@ -325,5 +395,6 @@ PanelWindow {
         }
       }
     }
+  }
   }
 }
